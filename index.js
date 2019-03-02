@@ -1,7 +1,7 @@
 'use strict'
 
 const qs = require('querystring');
-const http = require('./httpClient');
+const http = require('./http');
 const formData = require('form-data')
 
 const urls = {
