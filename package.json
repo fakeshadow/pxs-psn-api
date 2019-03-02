@@ -1,0 +1,27 @@
+{
+  "name": "pxs-psn-api",
+  "version": "1.0.0",
+  "description": "a simple psn api wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fakeshadow/pxs-psn-api.git"
+  },
+  "keywords": [
+    "psn",
+    "api"
+  ],
+  "author": "fakeshadow",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fakeshadow/pxs-psn-api/issues"
+  },
+  "homepage": "https://github.com/fakeshadow/pxs-psn-api#readme",
+  "dependencies": {
+    "form-data": "^2.3.3",
+    "request": "^2.88.0"
+  }
+}
