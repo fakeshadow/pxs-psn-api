@@ -16,7 +16,7 @@ async function getProfile('PSN_USER_ID') {
     const access_token = await api.getAcceeToken(uuid, tfa);
 
     //use the accessToken to get user profile 
-    const profile = await api.getProfile(access_token, 'PSN_USER_ID')
+    const profile = await api.getProfile('PSN_USER_ID', access_token)
     return profile
 }
  ```
