@@ -1,6 +1,6 @@
 {
   "name": "pxs-psn-api",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "a simple psn api wrapper",
   "main": "index.js",
   "scripts": {

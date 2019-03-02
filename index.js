@@ -166,7 +166,7 @@ class PSN {
 
     async showGameDetail(gameId, lang, region, age) {
         const option = {
-            url: `${urls.STORE_API}${lang}/${region}/${age}resolve/${gameId}`
+            url: `${urls.STORE_API}${lang}/${region}/${age}/resolve/${gameId}`
         }
         return await http.get(option);
     }
