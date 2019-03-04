@@ -1,7 +1,7 @@
 'use strict'
 
 const qs = require('querystring');
-const formData = require('form-data')
+const formData = require('form-data-fork')
 const fetch = require('node-fetch')
 
 /*  backup credential  
