@@ -1,6 +1,6 @@
 {
   "name": "pxs-psn-api",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "a simple psn api wrapper",
   "main": "index.js",
   "scripts": {
@@ -22,6 +22,6 @@
   "homepage": "https://github.com/fakeshadow/pxs-psn-api#readme",
   "dependencies": {
     "form-data": "^2.3.3",
-    "request": "^2.88.0"
+    "node-fetch": "^2.3.0"
   }
 }
