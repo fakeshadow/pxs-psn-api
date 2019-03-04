@@ -10,28 +10,30 @@ const api = new PSN
 const uuid = 'uuid for login'
 const tfa = 'two step code for login'
 
-async function getProfile('PSN_USER_ID') {
+// return a promise contain access_token and refresh_token. 
+const { access_token, refresh_token } = await api.getAcceeToken(uuid, tfa);
 
-    //return a promise contain accessToken which is needed to call other API endpoints
-    const access_token = await api.getAcceeToken(uuid, tfa);
+// access_token is used to call other APIs and refresh_token is used to get new access_token when it's expired.
+const tokenNew = await api.refreshAccessToken(refresh_token);
 
-    //use the accessToken to get user profile 
-    const profile = await api.getProfile('PSN_USER_ID', access_token)
-    return profile
-}
- ```
+//use the accessToken to get user profile 
+const profile = await api.getProfile('PSN_USER_ID', access_token);
+
+```
+
 
 ```javascript
 // other useful api calls
 
 api.searchGame(name, lang, region, age)   // find a named game from PSN store
 
-api.sendMessage(threadId, message, content, access_token)   // send a message to an PSN user(the target user must have a according privacy setting)
+api.sendMessage(threadId, message, content, access_token)   // send a message to a PSN user(the target user must have a according privacy setting). content accept buffer of image file. max size is 1mb
 
-api.getSummary(offset, onlineId, access_token) // get trophy summary of a given PSN user
+api.getSummary(offset, onlineId, access_token) // get trophy summary of a given PSN user. offset starts from 0.
+
+api.getIndividualGame(npCommunicationId, onlineId, access_token) //get trophies by gameId. 
 
  ```
 
 
-
-- some feature are not working for now(mainly sending image message and get user activity)
+- get user activity doesn not work for now
