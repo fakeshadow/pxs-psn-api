@@ -58,10 +58,13 @@ class PSN {
         return http.get(option);
     }
 
-    getSummary(offset, onlineId, access_token) {
+    getSummary(offset, onlineId, access_token, options) {
+        // options: {
+        //     npLanguage: <language code>
+        // }
         const fields = {
             'fields': '@default',
-            'npLanguage': 'en',
+            'npLanguage': options ? (options.npLanguage ? options.npLanguage : 'en') : 'en',
             'iconSize': 'm',
             'platform': 'PS3,PSVITA,PS4',
             'offset': offset,
