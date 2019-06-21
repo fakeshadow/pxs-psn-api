@@ -40,10 +40,13 @@ class PSN {
         return http.get(option);
     }
 
-    getIndividualGame(npCommunicationId, onlineId, access_token) {
+    getIndividualGame(npCommunicationId, onlineId, access_token, options) {
+        // options: {
+        //     npLanguage: <language code>
+        // }
         const fields = {
             'fields': '@default,trophyRare,trophyEarnedRate',
-            'npLanguage': 'en',
+            'npLanguage': options.npLanguage ? options.npLanguage : 'en',
             'comparedUser': onlineId
         }
         const option = {
