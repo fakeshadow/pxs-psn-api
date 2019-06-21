@@ -46,7 +46,7 @@ class PSN {
         // }
         const fields = {
             'fields': '@default,trophyRare,trophyEarnedRate',
-            'npLanguage': options.npLanguage ? options.npLanguage : 'en',
+            'npLanguage': options ? (options.npLanguage ? options.npLanguage : 'en') : 'en',
             'comparedUser': onlineId
         }
         const option = {
