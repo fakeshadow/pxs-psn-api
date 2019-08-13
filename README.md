@@ -49,7 +49,7 @@ main();
 ```javascript
 // other useful api calls
 
-api.searchGame(name, lang, region, age)   // find a named game from PSN store
+PSN.searchGame(name, lang, region, age)   // find a named game from PSN store
 
 api.sendMessage(threadId, message, content, access_token)   // send a message to an PSN user(the target user must have a according privacy setting)
 

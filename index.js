@@ -1,17 +1,22 @@
 'use strict'
 
+const fs = require('fs').promises;
 const qs = require('querystring');
+
 const http = require('./http');
-const formData = require('form-data')
+const fetch = require('node-fetch');
+const formData = require('form-data-fork');
 
 const urls = {
     AUTH_API: 'https://auth.api.sonyentertainmentnetwork.com/2.0/',
-    USERS_API: 'https://hk-prof.np.community.playstation.net/userProfile/v1/users/',
-    USER_TROPHY_API: 'https://hk-tpy.np.community.playstation.net/trophy/v1/trophyTitles',
-    ACTIVITY_API: 'https://activity.api.np.km.playstation.net/activity/api/',
 
-    MESSAGE_THREAD_API: 'https://hk-gmsg.np.community.playstation.net/groupMessaging/v1/',
+    USERS_API: '-prof.np.community.playstation.net/userProfile/v1/users/',
+    USER_TROPHY_API: '-tpy.np.community.playstation.net/trophy/v1/trophyTitles/',
+    MESSAGE_THREAD_API: '-gmsg.np.community.playstation.net/groupMessaging/v1/threads',
+
     STORE_API: 'https://store.playstation.com/valkyrie-api/',
+
+    ACTIVITY_API: 'https://activity.api.np.km.playstation.net/activity/api/',
 
     CLIENT_ID: 'b7cbf451-6bb6-4a5a-8913-71e61f462787',
     CLIENT_SECRET: 'zsISsjmCx85zgCJg',
@@ -19,105 +24,129 @@ const urls = {
     SCOPE: 'capone:report_submission,psn:sceapp,user:account.get,user:account.settings.privacy.get,user:account.settings.privacy.update,user:account.realName.get,user:account.realName.update,kamaji:get_account_hash,kamaji:ugc:distributor,oauth:manage_device_usercodes',
     REDIRECTURI: 'com.playstation.PlayStationApp://redirect',
 }
-
+// change log:
+// use constructor on psn object. you can pass region(default US), language(default English) and refresh_token(default null) when build;
+// getAccessToken method now return nothing when tokens are successfully got. you can use psn.refresh_token and psn.access_token to get them.
 class PSN {
-    async getAcceeToken(uuid, tfa) {
+    // default language is English and server region is USA
+    constructor({lang = "en", region = "us", access_token = null, refresh_token = null}) {
+        this.lang = lang;
+        this.region = region;
+        this.refresh_token = refresh_token;
+        this.access_token = access_token;
+    }
+
+    haveAccess() {
+        if (this.access_token == null) {
+            throw new Error("Unauthorized");
+        }
+    }
+
+    async auth(uuid, tfa) {
         const {npsso} = await getNpsso(uuid, tfa);
         const grantcode = await getGrant(npsso);
-        return getToken(grantcode);
+        let {access_token, refresh_token} = await getToken(grantcode);
+        this.access_token = access_token;
+        this.refresh_token = refresh_token;
     }
 
-    getProfile(onlineId, access_token) {
-        const fields = {
-            'fields': '@default,relation,requestMessageFlag,presence,@personalDetail,trophySummary',
-        }
+    async getProfile(onlineId) {
+        this.haveAccess();
+
         const option = {
-            url: `${urls.USERS_API}${onlineId}/profile?` + qs.stringify(fields),
+            url: `https://${this.region}${urls.USERS_API}${onlineId}/profile?fields=%40default,relation,requestMessageFlag,presence,%40personalDetail,trophySummary`,
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             }
         }
         return http.get(option);
     }
 
-    getIndividualGame(npCommunicationId, onlineId, access_token, options) {
-        // options: {
-        //     npLanguage: <language code>
-        // }
-        const fields = {
-            'fields': '@default,trophyRare,trophyEarnedRate',
-            'npLanguage': options ? (options.npLanguage ? options.npLanguage : 'en') : 'en',
-            'comparedUser': onlineId
-        }
+    async getIndividualGame(npCommunicationId, onlineId) {
+        this.haveAccess();
+
         const option = {
-            url: `${urls.USER_TROPHY_API}/${npCommunicationId}/trophyGroups/all/trophies?` + qs.stringify(fields),
+            url: `https://${this.region}${urls.USER_TROPHY_API}${npCommunicationId}/trophyGroups/all/trophies?fields=%40default,trophyRare,trophyEarnedRate&npLanguage=${this.lang}&comparedUser=${onlineId}`,
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             }
         }
         return http.get(option);
     }
 
-    getSummary(offset, onlineId, access_token, options) {
-        // options: {
-        //     npLanguage: <language code>
-        // }
-        const fields = {
-            'fields': '@default',
-            'npLanguage': options ? (options.npLanguage ? options.npLanguage : 'en') : 'en',
-            'iconSize': 'm',
-            'platform': 'PS3,PSVITA,PS4',
-            'offset': offset,
-            'limit': 100,
-            'comparedUser': onlineId
-        }
+    async getSummary(offset, onlineId) {
+        this.haveAccess();
         const option = {
-            url: `${urls.USER_TROPHY_API}?` + qs.stringify(fields),
+            url: `https://${this.region}${urls.USER_TROPHY_API}?fields=%40default&npLanguage=${this.lang}&iconSize=m&platform=PS3,PSVITA,PS4&offset=${offset}&limit=100&comparedUser=${onlineId}`,
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             }
         }
         return http.get(option);
     }
 
-    getExistingMessageThreads(access_token) {
+    async getExistingMessageThreads(offset) {
+        this.haveAccess();
         const option = {
-            url: `${urls.MESSAGE_THREAD_API}threads/`,
+            url: `https://${this.region}${urls.MESSAGE_THREAD_API}?offset=${offset}`,
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             }
         };
         return http.get(option);
     }
 
-    getThreadDetail(threadId, count, access_token) {
-        const field = {
-            'fields': 'threadMembers,threadNameDetail,threadThumbnailDetail,threadProperty,latestTakedownEventDetail,newArrivalEventDetail,threadEvents',
-            'count': count //show upto 100 recent messages from one thread
-        }
+    async getThreadDetail(threadId, count) {
+        this.haveAccess();
         const option = {
-            url: `${urls.MESSAGE_THREAD_API}threads/${threadId}?` + qs.stringify(field),
+            url: `https://${this.region}${urls.MESSAGE_THREAD_API}/${threadId}?fields=threadMembers,threadNameDetail,threadThumbnailDetail,threadProperty,latestTakedownEventDetail,newArrivalEventDetail,threadEvents&count=${count}`,
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             }
         };
         return http.get(option)
     }
 
-    sendMessage(threadId, message, content, access_token) {
-        if (content) return sendImage(threadId, message, content, access_token);
-        if (message && !content) return sendText(threadId, message, access_token);
-        return null;
+    async sendMessage(threadId, message, file_path) {
+        this.haveAccess();
+
+        const form = new formData();
+        const body = {
+            "messageEventDetail": {
+                "eventCategoryCode": file_path != null ? 3 : 1,
+                "messageDetail": {"body": message}
+            }
+        };
+
+        form.append('messageEventDetail', JSON.stringify(body), {contentType: 'application/json; charset=utf-8'});
+
+        if (file_path !=null) {
+            let f = await fs.readFile(file_path);
+            form.append('imageData', f, {contentType: 'image/png', contentLength: f.length});
+        }
+
+        let res = await fetch(`https://${this.region}${urls.MESSAGE_THREAD_API}/${threadId}/messages`, {
+            method: 'post',
+            body: form,
+            headers: {
+                'Authorization': `Bearer ${this.access_token}`,
+                'Content-Type': `multipart/form-data; boundary=${form._boundary}`,
+            }
+        });
+
+        return res.json();
     }
 
-    generateNewMessageThread(onlineId, selfOnlineId, access_token) {
+    async generateNewMessageThread(onlineId, selfOnlineId) {
+        this.haveAccess();
+
         const body = {"threadDetail": {"threadMembers": [{"onlineId": onlineId}, {"onlineId": selfOnlineId}]}}
         const form = new formData();
         form.append('threadDetail', JSON.stringify(body), {contentType: 'application/json; charset=utf-8'});
         const option = {
-            url: `${urls.MESSAGE_THREAD_API}threads/`,
+            url: `https://${this.region}${urls.MESSAGE_THREAD_API}/`,
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             },
             headers: {
                 'Content-Type': `multipart/form-data; boundary=${form._boundary}`,
@@ -127,17 +156,21 @@ class PSN {
         return http.post(option);
     }
 
-    leaveMessageThread(threadId, access_token) {
+    async leaveMessageThread(threadId) {
+        this.haveAccess();
+
         const option = {
-            url: `${urls.MESSAGE_THREAD_API}threads/${threadId}/users/me`,
+            url: `https://${this.region}${urls.MESSAGE_THREAD_API}/${threadId}/users/me`,
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             }
         }
         return http.del(option)
     }
 
-    getUserActivities(onlineId, type, page, access_token) {
+    async getUserActivities(onlineId, type, page) {
+        this.haveAccess();
+
         const body = {
             includeComments: true,
             offset: 0,
@@ -146,7 +179,7 @@ class PSN {
         const option = {
             url: `${urls.ACTIVITY_API}v1/users/${onlineId}/${type}/${page}?` + qs.stringify(body),
             auth: {
-                'bearer': `${access_token}`
+                'bearer': `${this.access_token}`
             },
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -163,21 +196,25 @@ class PSN {
         return http.get(option)
     }
 
-    searchGame(name, lang, region, age) {
+    static searchGame(name, lang, region, age) {
         const option = {
             url: `${urls.STORE_API}${lang}/${region}/${age}/tumbler-search/${name}?suggested_size=999&mode=game`
         }
         return http.get(option);
     }
 
-    async showGameDetail(gameId, lang, region, age) {
+    static showGameDetail(gameId, lang, region, age) {
         const option = {
             url: `${urls.STORE_API}${lang}/${region}/${age}/resolve/${gameId}`
         }
-        return await http.get(option);
+        return http.get(option);
     }
 
-    refreshAccessToken(refreshToken) {
+    async refreshAccessToken() {
+        if (this.refresh_token == null) {
+            throw new Error("no refresh_token found")
+        }
+
         const option = {
             url: `${urls.AUTH_API}oauth/token`,
             headers: {
@@ -187,13 +224,14 @@ class PSN {
                 app_context: 'inapp_ios',
                 client_id: urls.CLIENT_ID,
                 client_secret: urls.CLIENT_SECRET,
-                refresh_token: refreshToken,
+                refresh_token: this.refresh_token,
                 duid: urls.DUID,
                 scope: urls.SCOPE,
                 grant_type: 'refresh_token'
             })
         }
-        return http.post(option);
+        let {access_token} = await http.post(option);
+        this.access_token = access_token;
     }
 }
 
@@ -220,19 +258,10 @@ const getToken = grantcode => {
 }
 
 const getGrant = npsso => {
-    const code_request = {
-        "duid": urls.DUID,
-        "app_context": "inapp_ios",
-        "client_id": urls.CLIENT_ID,
-        "scope": urls.SCOPE,
-        "response_type": "code",
-    }
     const option = {
-        url: `${urls.AUTH_API}oauth/authorize?` + qs.stringify(code_request),
+        url: `https://auth.api.sonyentertainmentnetwork.com/2.0/oauth/authorize?duid=0000000d000400808F4B3AA3301B4945B2E3636E38C0DDFC&app_context=inapp_ios&client_id=b7cbf451-6bb6-4a5a-8913-71e61f462787&scope=capone:report_submission,psn:sceapp,user:account.get,user:account.settings.privacy.get,user:account.settings.privacy.update,user:account.realName.get,user:account.realName.update,kamaji:get_account_hash,kamaji:ugc:distributor,oauth:manage_device_usercodes&response_type=code`,
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        headers: {
             'Cookie': `npsso=${npsso}`
         },
         followRedirect: false
@@ -257,45 +286,5 @@ const getNpsso = (uuid, tfa) => {
     return http.post(option);
 }
 
-const sendText = (threadId, message, access_token) => {
-    const body = {"messageEventDetail": {"eventCategoryCode": 1, "messageDetail": {"body": message}}}
-    const form = new formData();
-    form.append('messageEventDetail', JSON.stringify(body), {
-        contentType: 'application/json; charset=utf-8',
-        knownLength: form.getLength
-    });
-    const option = {
-        url: `${urls.MESSAGE_THREAD_API}threads/${threadId}/messages`,
-        auth: {
-            'bearer': `${access_token}`
-        },
-        headers: {
-            'Content-Type': `multipart/form-data; boundary=${form._boundary}`,
-        },
-        body: form
-    };
-    return http.post(option);
-}
 
-const sendImage = (threadId, message, content, access_token) => {
-    console.log(content.length)
-    const body = {"messageEventDetail": {"eventCategoryCode": 3, "messageDetail": {"body": message}}}
-    const form = new formData();
-    form.append('messageEventDetail', JSON.stringify(body), {contentType: 'application/json; charset=utf-8'});
-    /* fork or change the form-data in node_modules/form-data/form-data.js
-         var header = {
-            'Content-Length': [].concat(contentLength || [])    add this line
-        }*/
-    form.append('imageData', content, {contentType: 'image/png', contentLength: content.length});
-    const option = {
-        url: `${urls.MESSAGE_THREAD_API}threads/${threadId}/messages`,
-        auth: {
-            'bearer': `${access_token}`
-        },
-        headers: {
-            'Content-Type': `multipart/form-data; boundary=${form._boundary}`
-        },
-        body: form,
-    };
-    return http.post(option).catch(e => console.log(e))
-}
+
