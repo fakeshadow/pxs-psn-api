@@ -3,10 +3,10 @@
 
 ## **[1.1.0] - 2019-08-13**
 
-###Added<br>
+### Added<br>
 * Add node-fetch as dep to reintroduce sending image messages.
-* use experimental fs.promises nodejs feature;
-###Changed
+* use experimental fs.promises nodejs feature.<br>
+### Changed<br>
 * PSN object now use constructor. Accepts<br> 
 ```{lang: <psn response language>, region: <server region>, refresh_token:<refresh_token>, access_token:<access_token>}``` as optional params.
 
