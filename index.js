@@ -42,10 +42,31 @@ class PSN {
         }
     }
 
-    async auth(uuid, tfa) {
-        const {npsso} = await getNpsso(uuid, tfa);
-        const grantcode = await getGrant(npsso);
-        let {access_token, refresh_token} = await getToken(grantcode);
+    // outdated authentication method
+    // async auth(uuid, tfa) {
+    //     const {npsso} = await getNpsso(uuid, tfa);
+    //     const grantcode = await getGrant(npsso);
+    //     let {access_token, refresh_token} = await getToken(grantcode);
+    //     this.access_token = access_token;
+    //     this.refresh_token = refresh_token;
+    // }
+
+    async auth(npsso) {
+        const option = {
+            url: `${urls.AUTH_API}oauth/token`,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie': 'npsso=' + npsso,
+            },
+            body: qs.stringify({
+                client_id: urls.CLIENT_ID,
+                client_secret: urls.CLIENT_SECRET,
+                scope: urls.SCOPE,
+                grant_type: 'sso_cookie'
+            })
+        }
+
+        let {access_token, refresh_token} = await http.post(option);
         this.access_token = access_token;
         this.refresh_token = refresh_token;
     }
@@ -120,7 +141,7 @@ class PSN {
 
         form.append('messageEventDetail', JSON.stringify(body), {contentType: 'application/json; charset=utf-8'});
 
-        if (file_path !=null) {
+        if (file_path != null) {
             let f = await fs.readFile(file_path);
             form.append('imageData', f, {contentType: 'image/png', contentLength: f.length});
         }
@@ -237,54 +258,53 @@ class PSN {
 
 module.exports = PSN;
 
-
-//helper functions
-const getToken = grantcode => {
-    const option = {
-        url: `${urls.AUTH_API}oauth/token`,
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: qs.stringify({
-            client_id: urls.CLIENT_ID,
-            client_secret: urls.CLIENT_SECRET,
-            duid: urls.DUID,
-            scope: urls.SCOPE,
-            code: grantcode,
-            grant_type: 'authorization_code'
-        })
-    }
-    return http.post(option);
-}
-
-const getGrant = npsso => {
-    const option = {
-        url: `https://auth.api.sonyentertainmentnetwork.com/2.0/oauth/authorize?duid=0000000d000400808F4B3AA3301B4945B2E3636E38C0DDFC&app_context=inapp_ios&client_id=b7cbf451-6bb6-4a5a-8913-71e61f462787&scope=capone:report_submission,psn:sceapp,user:account.get,user:account.settings.privacy.get,user:account.settings.privacy.update,user:account.realName.get,user:account.realName.update,kamaji:get_account_hash,kamaji:ugc:distributor,oauth:manage_device_usercodes&response_type=code`,
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cookie': `npsso=${npsso}`
-        },
-        followRedirect: false
-    }
-
-    return http.getResponseHeader(option);
-}
-
-const getNpsso = (uuid, tfa) => {
-    const option = {
-        url: `${urls.AUTH_API}ssocookie`,
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: qs.stringify({
-            authentication_type: 'two_step',
-            client_id: urls.CLIENT_ID,
-            ticket_uuid: uuid,
-            code: tfa
-        })
-    }
-    return http.post(option);
-}
+// outdated along with old auth method
+// const getToken = grantcode => {
+//     const option = {
+//         url: `${urls.AUTH_API}oauth/token`,
+//         headers: {
+//             'Content-Type': 'application/x-www-form-urlencoded',
+//         },
+//         body: qs.stringify({
+//             client_id: urls.CLIENT_ID,
+//             client_secret: urls.CLIENT_SECRET,
+//             duid: urls.DUID,
+//             scope: urls.SCOPE,
+//             code: grantcode,
+//             grant_type: 'authorization_code'
+//         })
+//     }
+//     return http.post(option);
+// }
+//
+// const getGrant = npsso => {
+//     const option = {
+//         url: `https://auth.api.sonyentertainmentnetwork.com/2.0/oauth/authorize?duid=0000000d000400808F4B3AA3301B4945B2E3636E38C0DDFC&app_context=inapp_ios&client_id=b7cbf451-6bb6-4a5a-8913-71e61f462787&scope=capone:report_submission,psn:sceapp,user:account.get,user:account.settings.privacy.get,user:account.settings.privacy.update,user:account.realName.get,user:account.realName.update,kamaji:get_account_hash,kamaji:ugc:distributor,oauth:manage_device_usercodes&response_type=code`,
+//         headers: {
+//             'Content-Type': 'application/x-www-form-urlencoded',
+//             'Cookie': `npsso=${npsso}`
+//         },
+//         followRedirect: false
+//     }
+//
+//     return http.getResponseHeader(option);
+// }
+//
+// const getNpsso = (uuid, tfa) => {
+//     const option = {
+//         url: `${urls.AUTH_API}ssocookie`,
+//         headers: {
+//             'Content-Type': 'application/x-www-form-urlencoded',
+//         },
+//         body: qs.stringify({
+//             authentication_type: 'two_step',
+//             client_id: urls.CLIENT_ID,
+//             ticket_uuid: uuid,
+//             code: tfa
+//         })
+//     }
+//     return http.post(option);
+// }
 
 
 

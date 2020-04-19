@@ -4,13 +4,11 @@ const PSN = require('./index.js');
 const psn = new PSN({
     lang: "en",  //(default value en)
     region: "hk",  // server region(default value us)
-    refresh_token: "575d046c-959d-4d50-b102-ac4d1cfe5462", //refresh_token(default value null)
+    refresh_token: null, //refresh_token(default value null)
     access_token: null  //access_token(default value null)
 });
 
-const uuid = "your uuid";
-const tfa = "your two step code";
-
+const npsso = "put your npsso code here in string form";
 
 async function main() {
 
@@ -18,16 +16,16 @@ async function main() {
         await psn.refreshAccessToken();
     } catch (e) {
         console.log('error: ', e);
-        console.log("Trying to login with uuid and two_step code");
-        await psn.auth(uuid, tfa);
+        console.log("Trying to login with npsso code");
+        await psn.auth(npsso);
     }
 
     if (psn.access_token == null) {
-        console.log("Authentication failed. Please check your uuid and/or tfa code if the network to PSN is Ok");
+        console.log("Authentication failed. Please check your npsso code if the network to PSN is Ok");
         return;
     }
 
-    console.log(`Authentication Success`);
+    console.log(`Authentication Success, You npsso code is consumed in the auth progress and can't be used again. If you want to login in with npsso next time be sure to get a new one`);
 
     try {
         let profile = await psn.getProfile("Hakoom");
