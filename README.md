@@ -1,6 +1,6 @@
 # Example:
 
-- You need access token to interact with PSN APIs. They can be obtained with a uuid and twoFA code. See [**HERE**](https://tusticles.com/psn-php/first_login.html) for detail how to get them
+- You need access token to interact with PSN APIs. They can be obtained with a npsso code. See [**HERE**](https://tusticles.com/psn-php/first_login.html) for detail how to get them
 
 - chage your npsso in example.js and run
 `node example.js`

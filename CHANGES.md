@@ -1,6 +1,6 @@
 # Change Log
 
-## **2020-04-20**
+## **[2.0.0] - 2020-04-20**
 
 ### Changed<br>
 * use new method for first time authentication. examples and readme have been updated to reflect the change
