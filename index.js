@@ -1,7 +1,6 @@
 'use strict'
 
 const fs = require('fs').promises;
-const qs = require('querystring');
 
 const http = require('./http');
 const fetch = require('node-fetch');
@@ -18,18 +17,22 @@ const urls = {
 
     ACTIVITY_API: 'https://activity.api.np.km.playstation.net/activity/api/',
 
-    CLIENT_ID: 'b7cbf451-6bb6-4a5a-8913-71e61f462787',
-    CLIENT_SECRET: 'zsISsjmCx85zgCJg',
-    DUID: '0000000d000400808F4B3AA3301B4945B2E3636E38C0DDFC',
-    SCOPE: 'capone:report_submission,psn:sceapp,user:account.get,user:account.settings.privacy.get,user:account.settings.privacy.update,user:account.realName.get,user:account.realName.update,kamaji:get_account_hash,kamaji:ugc:distributor,oauth:manage_device_usercodes',
-    REDIRECTURI: 'com.playstation.PlayStationApp://redirect',
+    CLIENT_ID: "7c01ce37-cb6b-4938-9c1b-9e36fd5477fa",
+    CLIENT_SECRET: "GNumO5QMsagNcO2q",
+    DUID: "00000007000801a8000000000000008241fdf6ab09ba863a20202020476f6f676c653a416e64726f696420534400000000000000000000000000000000",
+    SCOPE: "kamaji:get_players_met+kamaji:get_account_hash+kamaji:activity_feed_submit_feed_story+kamaji:activity_feed_internal_feed_submit_story+kamaji:activity_feed_get_news_feed+kamaji:communities+kamaji:game_list+kamaji:ugc:distributor+oauth:manage_device_usercodes+psn:sceapp+user:account.profile.get+user:account.attributes.validate+user:account.settings.privacy.get+kamaji:activity_feed_set_feed_privacy+kamaji:satchel+kamaji:satchel_delete+user:account.profile.update+kamaji:url_preview",
+
+    // backup
+    // CLIENT_ID: 'b7cbf451-6bb6-4a5a-8913-71e61f462787',
+    // CLIENT_SECRET: 'zsISsjmCx85zgCJg',
+    // DUID: '0000000d000400808F4B3AA3301B4945B2E3636E38C0DDFC',
+    // SCOPE: 'capone:report_submission,psn:sceapp,user:account.get,user:account.settings.privacy.get,user:account.settings.privacy.update,user:account.realName.get,user:account.realName.update,kamaji:get_account_hash,kamaji:ugc:distributor,oauth:manage_device_usercodes',
+    // REDIRECTURI: 'com.playstation.PlayStationApp://redirect',
 }
-// change log:
-// use constructor on psn object. you can pass region(default US), language(default English) and refresh_token(default null) when build;
-// getAccessToken method now return nothing when tokens are successfully got. you can use psn.refresh_token and psn.access_token to get them.
+
 class PSN {
     // default language is English and server region is USA
-    constructor({lang = "en", region = "us", access_token = null, refresh_token = null}) {
+    constructor({ lang = "en", region = "us", access_token = null, refresh_token = null }) {
         this.lang = lang;
         this.region = region;
         this.refresh_token = refresh_token;
@@ -42,15 +45,6 @@ class PSN {
         }
     }
 
-    // outdated authentication method
-    // async auth(uuid, tfa) {
-    //     const {npsso} = await getNpsso(uuid, tfa);
-    //     const grantcode = await getGrant(npsso);
-    //     let {access_token, refresh_token} = await getToken(grantcode);
-    //     this.access_token = access_token;
-    //     this.refresh_token = refresh_token;
-    // }
-
     async auth(npsso) {
         const option = {
             url: `${urls.AUTH_API}oauth/token`,
@@ -58,15 +52,10 @@ class PSN {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Cookie': 'npsso=' + npsso,
             },
-            body: qs.stringify({
-                client_id: urls.CLIENT_ID,
-                client_secret: urls.CLIENT_SECRET,
-                scope: urls.SCOPE,
-                grant_type: 'sso_cookie'
-            })
+            body: `client_id=${urls.CLIENT_ID}&client_secret=${urls.CLIENT_SECRET}&scope=${urls.SCOPE}&grant_type=sso_cookie`,
         }
 
-        let {access_token, refresh_token} = await http.post(option);
+        const { access_token, refresh_token } = await http.post(option);
         this.access_token = access_token;
         this.refresh_token = refresh_token;
     }
@@ -135,15 +124,15 @@ class PSN {
         const body = {
             "messageEventDetail": {
                 "eventCategoryCode": file_path != null ? 3 : 1,
-                "messageDetail": {"body": message}
+                "messageDetail": { "body": message }
             }
         };
 
-        form.append('messageEventDetail', JSON.stringify(body), {contentType: 'application/json; charset=utf-8'});
+        form.append('messageEventDetail', JSON.stringify(body), { contentType: 'application/json; charset=utf-8' });
 
         if (file_path != null) {
             let f = await fs.readFile(file_path);
-            form.append('imageData', f, {contentType: 'image/png', contentLength: f.length});
+            form.append('imageData', f, { contentType: 'image/png', contentLength: f.length });
         }
 
         let res = await fetch(`https://${this.region}${urls.MESSAGE_THREAD_API}/${threadId}/messages`, {
@@ -161,9 +150,9 @@ class PSN {
     async generateNewMessageThread(onlineId, selfOnlineId) {
         this.haveAccess();
 
-        const body = {"threadDetail": {"threadMembers": [{"onlineId": onlineId}, {"onlineId": selfOnlineId}]}}
+        const body = { "threadDetail": { "threadMembers": [{ "onlineId": onlineId }, { "onlineId": selfOnlineId }] } }
         const form = new formData();
-        form.append('threadDetail', JSON.stringify(body), {contentType: 'application/json; charset=utf-8'});
+        form.append('threadDetail', JSON.stringify(body), { contentType: 'application/json; charset=utf-8' });
         const option = {
             url: `https://${this.region}${urls.MESSAGE_THREAD_API}/`,
             auth: {
@@ -231,7 +220,7 @@ class PSN {
         return http.get(option);
     }
 
-    async refreshAccessToken() {
+    async refreshTokens() {
         if (this.refresh_token == null) {
             throw new Error("no refresh_token found")
         }
@@ -241,70 +230,15 @@ class PSN {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: qs.stringify({
-                app_context: 'inapp_ios',
-                client_id: urls.CLIENT_ID,
-                client_secret: urls.CLIENT_SECRET,
-                refresh_token: this.refresh_token,
-                duid: urls.DUID,
-                scope: urls.SCOPE,
-                grant_type: 'refresh_token'
-            })
+            body: `app_context=inapp_ios&client_id=${urls.CLIENT_ID}&client_secret=${urls.CLIENT_SECRET}&refresh_token=${this.refresh_token}&duid=${urls.DUID}&scope=${urls.SCOPE}&grant_type=refresh_token`,
         }
-        let {access_token} = await http.post(option);
+        let { access_token, refresh_token } = await http.post(option);
         this.access_token = access_token;
+        this.refresh_token = refresh_token;
     }
 }
 
 module.exports = PSN;
-
-// outdated along with old auth method
-// const getToken = grantcode => {
-//     const option = {
-//         url: `${urls.AUTH_API}oauth/token`,
-//         headers: {
-//             'Content-Type': 'application/x-www-form-urlencoded',
-//         },
-//         body: qs.stringify({
-//             client_id: urls.CLIENT_ID,
-//             client_secret: urls.CLIENT_SECRET,
-//             duid: urls.DUID,
-//             scope: urls.SCOPE,
-//             code: grantcode,
-//             grant_type: 'authorization_code'
-//         })
-//     }
-//     return http.post(option);
-// }
-//
-// const getGrant = npsso => {
-//     const option = {
-//         url: `https://auth.api.sonyentertainmentnetwork.com/2.0/oauth/authorize?duid=0000000d000400808F4B3AA3301B4945B2E3636E38C0DDFC&app_context=inapp_ios&client_id=b7cbf451-6bb6-4a5a-8913-71e61f462787&scope=capone:report_submission,psn:sceapp,user:account.get,user:account.settings.privacy.get,user:account.settings.privacy.update,user:account.realName.get,user:account.realName.update,kamaji:get_account_hash,kamaji:ugc:distributor,oauth:manage_device_usercodes&response_type=code`,
-//         headers: {
-//             'Content-Type': 'application/x-www-form-urlencoded',
-//             'Cookie': `npsso=${npsso}`
-//         },
-//         followRedirect: false
-//     }
-//
-//     return http.getResponseHeader(option);
-// }
-//
-// const getNpsso = (uuid, tfa) => {
-//     const option = {
-//         url: `${urls.AUTH_API}ssocookie`,
-//         headers: {
-//             'Content-Type': 'application/x-www-form-urlencoded',
-//         },
-//         body: qs.stringify({
-//             authentication_type: 'two_step',
-//             client_id: urls.CLIENT_ID,
-//             ticket_uuid: uuid,
-//             code: tfa
-//         })
-//     }
-//     return http.post(option);
-// }
 
 
 

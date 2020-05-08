@@ -1,9 +1,9 @@
 # Example:
 
 - You need access token to interact with PSN APIs. They can be obtained with a npsso code. See [**HERE**](https://tusticles.com/psn-php/first_login.html) for detail how to get them
+- If you want an automated method to obtain npsso codes. See [**HERE**](https://github.com/fakeshadow/psn_agent)
 
-- chage your npsso in example.js and run
-`node example.js`
+- chage your `npsso` in `example.js` and run `node example.js`
 
 
 ```javascript
@@ -22,9 +22,9 @@ const npsso = "put your npsso code here in string form";
 
 async function main() {
     try {
-        // access token is used to call other api, and refresh token is used to get new access_token when it's expired
-        const { access_token, refresh_token } = await psn.auth(npsso);
+        await psn.auth(npsso);
 
+        // access token is used to call other api, and refresh token is used to get new access_token when it's expired
         console.log(psn.access_token, psn.refresh_token);
 
         // get user profile with access_token
@@ -41,6 +41,8 @@ main();
 
 ```javascript
 // other useful api calls
+
+psn.refreshTokens() // update your tokens
 
 psn.searchGame(name, lang, region, age)   // find a named game from PSN store
 

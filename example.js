@@ -11,9 +11,8 @@ const psn = new PSN({
 const npsso = "put your npsso code here in string form";
 
 async function main() {
-
     try {
-        await psn.refreshAccessToken();
+        await psn.refreshTokens();
     } catch (e) {
         console.log('error: ', e);
         console.log("Trying to login with npsso code");
@@ -48,11 +47,11 @@ async function main() {
 
         console.log("psn object holds tokens that are needed for future use , it's best to store them locally before drop the object");
         console.log(`Your access_token: ${psn.access_token}  //<- You need this to call most APIs`);
-        console.log(`Your refresh_token: ${psn.refresh_token} //<- You need this to generate new access_token as the latter only last an hour before it expire.`);
-        console.log("Example finish successfully.")
+        console.log(`Your refresh_token: ${psn.refresh_token} //<- You need this to generate new tokens as the access_token only last an hour before it expire.\r\nrefresh_token lasts much long but it would eventually become invalid if you don't regularly call PSN.refreshTokens()`);
+        console.log("Example finish successfully.");
     } catch (e) {
         console.log(`error: ${e}`)
-        console.log(`Something went wrong in one of the API endpoint test. You can try to restart the example with your newly obtained refresh_token: ${psn.refresh_token}`);
+        console.log(`Something went wrong in one of the API endpoint test. You can try to restart the example with your latest refresh_token: ${psn.refresh_token}`);
     }
 }
 
