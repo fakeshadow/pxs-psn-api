@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+    <body>
+    <h2>Client latency summary</h2>
+    <ul>
+    <% for (addr, latency) in latencies { %>
+        <li>Address: <%= addr %>. Average: <%= latency.average %>ns. Rounds: <%= latency.round %></li>
+    <% } %>
+    </ul>
+    </body>
+</html>

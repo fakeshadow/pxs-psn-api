@@ -1,0 +1,41 @@
+[package]
+name = "hft-mock-rs"
+version = "0.1.0"
+edition = "2018"
+
+[[example]]
+path = "examples/rem_server.rs"
+name = "rem_server"
+
+[dependencies]
+ahash = "0.7.4"
+bytes = "1"
+chrono = "0.4.19"
+core_affinity = "0.5.10"
+parking_lot = "0.11.1"
+rand = "0.8.4"
+rem = "0.1"
+sailfish = "0.3.3"
+tokio = { version = "1.9", features = ["io-util", "rt"] }
+tracing = { version = "0.1.26", default-features = false, features = ["std"] }
+xitca-http = "0.1"
+xitca-server = "0.1"
+xitca-service = "0.1"
+
+[dev-dependencies]
+mimalloc = { version = "0.1.26", default-features = false }
+tracing-subscriber = "0.2"
+
+[patch.crates-io]
+httparse = { git = "https://github.com/seanmonstar/httparse" }
+
+rem = { path = "../rem" }
+xitca-http = { git = "https://github.com/fakeshadow/xitca-web", branch = "feat/uninit_req_headers" }
+xitca-server = { git = "https://github.com/fakeshadow/xitca-web", branch = "feat/uninit_req_headers" }
+xitca-service = { git = "https://github.com/fakeshadow/xitca-web", branch = "feat/uninit_req_headers" }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+panic = "abort"
